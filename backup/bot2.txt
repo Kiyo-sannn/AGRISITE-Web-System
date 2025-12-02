@@ -1,0 +1,19 @@
+import google.generativeai as genai
+
+# Configure API key
+genai.configure(api_key="AIzaSyD9xEO-T1gh09EEG3njGHFB5BG78IGmsnU")
+
+# Create model
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+def ask_gemini(prompt):
+    response = model.generate_content(prompt)
+    return response.text
+
+# Test
+if __name__ == "__main__":
+    while True:
+        user = input("You: ")
+        if user.lower() in ["exit", "quit"]:
+            break
+        print("Bot:", ask_gemini(user))
