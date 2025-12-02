@@ -16,6 +16,65 @@ const cameraInfo = document.getElementById('cameraInfo');
 const modalStream = document.getElementById('modalCameraStream');
 const cameraModal = document.getElementById('cameraModal');
 
+// Function to determine sensor status
+function getSensorStatus(temperature, humidity, gasLevel) {
+    if (gasLevel > 300) {
+        return { class: 'status-warning', text: 'Warning' };
+    }
+    if (temperature > 35 || humidity > 80) {
+        return { class: 'status-caution', text: 'Caution' };
+    }
+    return { class: 'status-safe', text: 'Normal' };
+}
+
+// Function to update individual sensor status
+function updateSensorStatus(sensorType, value, temperature = null, humidity = null, gasLevel = null) {
+    const card = document.querySelector(`.metric-card.${sensorType}`);
+    if (!card) return;
+    
+    const badge = card.querySelector('.status-badge');
+    if (!badge) return;
+    
+    let status;
+    
+    switch(sensorType) {
+        case 'temperature':
+            status = value > 35 ? 
+                { class: 'status-caution', text: 'High' } : 
+                value < 15 ? 
+                { class: 'status-caution', text: 'Low' } : 
+                { class: 'status-safe', text: 'Normal' };
+            break;
+            
+        case 'humidity':
+            status = value > 80 ? 
+                { class: 'status-caution', text: 'High' } : 
+                value < 30 ? 
+                { class: 'status-caution', text: 'Low' } : 
+                { class: 'status-safe', text: 'Normal' };
+            break;
+            
+        case 'gas':
+            status = value > 300 ? 
+                { class: 'status-warning', text: 'Warning' } : 
+                value > 200 ? 
+                { class: 'status-caution', text: 'Elevated' } : 
+                { class: 'status-safe', text: 'Safe' };
+            break;
+            
+        case 'altitude':
+            status = { class: 'status-safe', text: 'Active' };
+            break;
+            
+        default:
+            status = { class: 'status-safe', text: 'Normal' };
+    }
+    
+    // Update badge
+    badge.className = `status-badge ${status.class}`;
+    badge.textContent = status.text;
+}
+
 // Navigation functionality
 function switchSection(sectionId) {
     // Hide all sections
@@ -185,6 +244,12 @@ function refreshSensorData() {
             if (humidityCard) humidityCard.textContent = data.humidity + '%';
             if (gasCard) gasCard.textContent = data.gas_sensor;
             if (altitudeCard) altitudeCard.textContent = data.altitude + 'm';
+            
+            // Update status badges for each sensor
+            updateSensorStatus('temperature', data.temperature);
+            updateSensorStatus('humidity', data.humidity);
+            updateSensorStatus('gas', data.gas_sensor);
+            updateSensorStatus('altitude', data.altitude);
         })
         .catch(error => console.log('Error fetching sensor data:', error));
 }
@@ -235,16 +300,11 @@ function refreshHistoryData() {
                     const timestamp = record.timestamp || 'N/A';
                     
                     // Determine status
-                    let statusClass = 'status-safe';
-                    let statusText = 'Normal';
-                    
-                    if (gas > 300) {
-                        statusClass = 'status-warning';
-                        statusText = 'Warning';
-                    } else if (temp > 35 || humidity > 80) {
-                        statusClass = 'status-caution';
-                        statusText = 'Caution';
-                    }
+                    const status = getSensorStatus(
+                        temp !== 'N/A' ? temp : 0,
+                        humidity !== 'N/A' ? humidity : 0,
+                        gas !== 'N/A' ? gas : 0
+                    );
                     
                     tableHTML += `
                         <tr>
@@ -253,7 +313,7 @@ function refreshHistoryData() {
                             <td>${humidity}${humidity !== 'N/A' ? '%' : ''}</td>
                             <td>${gas}</td>
                             <td>${altitude}${altitude !== 'N/A' ? 'm' : ''}</td>
-                            <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                            <td><span class="status-badge ${status.class}">${status.text}</span></td>
                         </tr>
                     `;
                 });
@@ -303,6 +363,9 @@ document.querySelectorAll('.metric-card').forEach(card => {
 
 // Initialize dashboard
 window.addEventListener('load', function() {
+    // Initial status update on page load
+    refreshSensorData();
+    
     setTimeout(() => {
         initializeStream();
     }, 1000);
