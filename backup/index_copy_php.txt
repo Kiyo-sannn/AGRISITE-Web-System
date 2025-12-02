@@ -1,0 +1,669 @@
+<?php
+$esp32_ip = "192.168.68.204";
+$stream_port = "81";
+$stream_url = "http://{$esp32_ip}:{$stream_port}/stream";
+
+function readJsonData($filename) {
+    if (file_exists($filename)) {
+        $json_content = file_get_contents($filename);
+        return json_decode($json_content, true);
+    }
+    return null;
+}
+
+$sensor_data = readJsonData('json\data.json');
+$ai_data = readJsonData('json\ai_data.json');
+$history_data = readJsonData('json\history.json');
+
+$default_sensor_data = [
+    'temperature' => 28.5,
+    'humidity' => 57,
+    'gas_sensor' => 286,
+    'altitude' => 163.7
+];
+
+$default_ai_data = [
+    'recommendation' => 'Based on the comprehensive data analysis, I recommend implementing a multi-tiered approach focusing on user engagement optimization and performance enhancement. The patterns indicate significant opportunities for improvement in conversion rates through targeted personalization strategies.'
+];
+
+$data = $sensor_data ?: $default_sensor_data;
+$ai_recommendation = $ai_data ?: $default_ai_data;
+
+if (isset($_GET['proxy_stream'])) {
+    header('Content-Type: multipart/x-mixed-replace; boundary=frame');
+    header('Cache-Control: no-cache');
+    header('Pragma: no-cache');
+    
+    $context = stream_context_create([
+        'http' => [
+            'timeout' => 30,
+            'method' => 'GET'
+        ]
+    ]);
+    
+    $stream = fopen($stream_url, 'r', false, $context);
+    
+    if ($stream) {
+        while (!feof($stream)) {
+            echo fread($stream, 8192);
+            flush();
+        }
+        fclose($stream);
+    } else {
+        echo "Error: Could not connect to ESP32 camera stream";
+    }
+    exit;
+}
+
+if (isset($_GET['snapshot'])) {
+    $snapshot_url = "http://{$esp32_ip}/capture";
+    
+    $image_data = file_get_contents($snapshot_url);
+    
+    if ($image_data !== false) {
+        header('Content-Type: image/jpeg');
+        echo $image_data;
+    } else {
+        header('HTTP/1.1 404 Not Found');
+        echo "Snapshot not available";
+    }
+    exit;
+}
+
+function getSensorStatus($temperature, $humidity, $gas_level) {
+    if ($gas_level > 300) return ['class' => 'status-warning', 'text' => 'Warning'];
+    if ($temperature > 35 || $humidity > 80) return ['class' => 'status-caution', 'text' => 'Caution'];
+    return ['class' => 'status-safe', 'text' => 'Normal'];
+}
+?>
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PNHS Dashboard</title>
+    <link rel="icon" href="asset/logo.png">
+    <link rel="stylesheet" href="asset/style.css">
+</head>
+<body>
+    <button class="mobile-menu-toggle" onclick="toggleMobileMenu()">☰</button>
+
+    <div class="dashboard-container">
+        <!-- Left Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">AgriSight & Growver</div>
+                <div class="subtitle">Smart Agriculture Dashboard</div>
+            </div>
+            
+            <ul class="nav-menu">
+                <li class="nav-item">
+                    <a class="nav-link active" data-section="sensors">
+                        Sensors
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="camera">
+                        Camera System
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="ai-insights">
+                        AgriSight AI
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="history">
+                        History
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" data-section="about">
+                        About
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <div class="content-title" id="contentTitle">Live Sensor Monitoring</div>
+                <div class="content-subtitle" id="contentSubtitle">Real-time data from your agricultural monitoring system</div>
+            </div>
+
+            <!-- Sensors Section -->
+            <div class="content-section active" id="sensors">
+                <div class="sensors-top-row">
+                    <div class="metric-card temperature" onclick="redirectToAnalytics('temperature')">
+                        <div class="metric-header">
+                            <div class="metric-title">Temperature</div>
+                            <div class="metric-title">DHT22</div>
+                        </div>
+                        <div class="metric-value"><?php echo $data['temperature']; ?>°C</div>
+                        <div class="metric-subtitle">Current temperature</div>
+                        <span class="status-badge status-safe">Normal</span>
+                        <div class="click-indicator">Click for analytics</div>
+                    </div>
+
+                    <div class="metric-card humidity" onclick="redirectToAnalytics('humidity')">
+                        <div class="metric-header">
+                            <div class="metric-title">Humidity</div>
+                            <div class="metric-title">DHT22</div>
+                        </div>
+                        <div class="metric-value"><?php echo $data['humidity']; ?>%</div>
+                        <div class="metric-subtitle">Relative humidity</div>
+                        <span class="status-badge status-safe">Normal</span>
+                        <div class="click-indicator">Click for analytics</div>
+                    </div>
+                </div>
+
+                <!-- Bottom Row: Gas and Altitude -->
+                <div class="sensors-bottom-row">
+                    <div class="metric-card gas" onclick="redirectToAnalytics('gas')">
+                        <div class="metric-header">
+                            <div class="metric-title">Gas Sensor</div>
+                            <div class="metric-title">MQ2</div>
+                        </div>
+                        <div class="metric-value"><?php echo $data['gas_sensor']; ?></div>
+                        <div class="metric-subtitle">Gas concentration level</div>
+                        <span class="status-badge status-safe">Safe</span>
+                        <div class="click-indicator">Click for analytics</div>
+                    </div>
+
+                    <div class="metric-card altitude" onclick="redirectToAnalytics('altitude')">
+                        <div class="metric-header">
+                            <div class="metric-title">Altitude</div>
+                            <div class="metric-title">Barometric</div>
+                        </div>
+                        <div class="metric-value"><?php echo $data['altitude']; ?>m</div>
+                        <div class="metric-subtitle">Above sea level</div>
+                        <span class="status-badge status-safe">Active</span>
+                        <div class="click-indicator">Click for analytics</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Camera Section -->
+            <div class="content-section" id="camera">
+                <div class="camera-container">
+                    <div class="camera-status-bar">
+                        <h3 style="color: white; margin: 0;">ESP32 Camera Feed</h3>
+                        <span id="cameraStatus" class="camera-status connecting">Connecting</span>
+                    </div>
+                    <div class="camera-preview" onclick="openFullscreen()">
+                        <img id="cameraStream" style="display: none;" alt="Camera Stream">
+                        <div class="camera-overlay" id="cameraOverlay">
+                            <div class="camera-text">Click to view live feed</div>
+                            <div class="camera-text" style="font-size: 14px; opacity: 0.8;">ESP32 Camera Stream</div>
+                        </div>
+                    </div>
+                    <div style="margin-top: 16px; color: rgba(255, 255, 255, 0.7); font-size: 14px;" id="cameraInfo">
+                        Ready to connect to <?php echo $esp32_ip; ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Insights Section -->
+            <div class="content-section" id="ai-insights">
+                <div class="ai-container">
+                    <div class="ai-content" id="ai-analysis">
+                        <?php
+                        if (isset($ai_data[0]['analysis'])) {
+                            $analysis = $ai_data[0]['analysis'];
+                        $formatted = preg_replace(
+                            "/\b(\d+)\.\s+(Temperature|Humidity|Gas Sensor(?: \(.*?\))?):/i",
+                            "<br><strong>$1. $2:</strong>",
+                            $analysis
+                        );
+                        $formatted = preg_replace('/(<br>\s*){2,}/i', '<br><br>', $formatted);
+                        $formatted = nl2br(trim($formatted));
+                        echo $formatted;
+                        } else {
+                            echo "AI analysis is currently being processed. Please check back shortly for intelligent insights about your agricultural system.";
+                        }
+                        ?>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Section -->
+            <div class="content-section" id="history">
+                <div class="history-table">
+                    <h3 class="table-title">Sensor Data History</h3>
+                    
+                    <?php if ($history_data && is_array($history_data) && count($history_data) > 0): ?>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Temperature</th>
+                                <th>Humidity</th>
+                                <th>Gas Level</th>
+                                <th>Altitude</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php foreach ($history_data as $record): ?>
+                            <?php 
+                                $status = getSensorStatus(
+                                    $record['temperature'] ?? 0, 
+                                    $record['humidity'] ?? 0, 
+                                    $record['gas_sensor'] ?? 0
+                                );
+                            ?>
+                            <tr>
+                                <td><?php echo htmlspecialchars($record['timestamp'] ?? 'N/A'); ?></td>
+                                <td><?php echo htmlspecialchars($record['temperature'] ?? 'N/A'); ?><?php echo isset($record['temperature']) ? '°C' : ''; ?></td>
+                                <td><?php echo htmlspecialchars($record['humidity'] ?? 'N/A'); ?><?php echo isset($record['humidity']) ? '%' : ''; ?></td>
+                                <td><?php echo htmlspecialchars($record['gas_sensor'] ?? 'N/A'); ?></td>
+                                <td><?php echo htmlspecialchars($record['altitude'] ?? 'N/A'); ?><?php echo isset($record['altitude']) ? 'm' : ''; ?></td>
+                                <td><span class="status-badge <?php echo $status['class']; ?>"><?php echo $status['text']; ?></span></td>
+                            </tr>
+                            <?php endforeach; ?>
+                        </tbody>
+                    </table>
+                    <?php else: ?>
+                    <div class="no-data-message">
+                        No historical data available yet. Data will appear here once collection begins.
+                    </div>
+                    <?php endif; ?>
+                </div>
+            </div>
+
+            <!-- About Section -->
+            <div class="content-section" id="about">
+                <div class="ai-container">
+                    <div class="ai-content">
+                        <p><strong>Satellite-Guided Rover Technology for Data-Driven Irrigation and Crop Health Monitoring</strong></p>
+                        <br>
+                        <p>AgriSight & GrowVer represents a cutting-edge agricultural monitoring system that combines IoT sensors, satellite technology, and AI-driven analytics to optimize crop health and irrigation management.</p>
+                        <br>
+                        <p><strong>Key Features:</strong></p>
+                        <p>• Real-time environmental monitoring (temperature, humidity, gas levels)</p>
+                        <p>• High-definition camera surveillance system</p>
+                        <p>• AI-powered data analysis and recommendations</p>
+                        <p>• Historical data tracking and trend analysis</p>
+                        <p>• Mobile-responsive dashboard interface</p>
+                        <br>
+                        <p><strong>Technology Stack:</strong></p>
+                        <p>• ESP32 microcontroller with integrated camera</p>
+                        <p>• DHT22 temperature and humidity sensor</p>
+                        <p>• MQ2 gas sensor for air quality monitoring</p>
+                        <p>• Web-based dashboard with real-time data visualization</p>
+                        <br>
+                        <p><strong>Version:</strong> 2.0.1</p>
+                        <p><strong>Last Updated:</strong> ? 2025</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Camera Modal -->
+    <div id="cameraModal" class="camera-modal" onclick="closeFullscreen()">
+        <span class="camera-modal-close" onclick="closeFullscreen()">&times;</span>
+        <div class="camera-modal-content">
+            <img id="modalCameraStream" alt="Fullscreen Camera">
+        </div>
+    </div>
+
+    <script>
+        const ESP32_IP = '<?php echo $esp32_ip; ?>';
+        const STREAM_PORT = '<?php echo $stream_port; ?>';
+        const STREAM_URL = `http://${ESP32_IP}:${STREAM_PORT}/stream`;
+        const PROXY_URL = '?proxy_stream=1';
+        
+        let streamActive = false;
+        let reconnectAttempts = 0;
+        let maxReconnectAttempts = 5;
+        let reconnectTimeout;
+
+        // DOM elements
+        const cameraStream = document.getElementById('cameraStream');
+        const cameraOverlay = document.getElementById('cameraOverlay');
+        const cameraStatus = document.getElementById('cameraStatus');
+        const cameraInfo = document.getElementById('cameraInfo');
+        const modalStream = document.getElementById('modalCameraStream');
+        const cameraModal = document.getElementById('cameraModal');
+
+        // Navigation functionality
+        function switchSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.classList.remove('active');
+            });
+            
+            // Remove active class from all nav links
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.classList.remove('active');
+            });
+            
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+            
+            // Add active class to clicked nav link
+            document.querySelector(`[data-section="${sectionId}"]`).classList.add('active');
+            
+            // Update content header
+            updateContentHeader(sectionId);
+        }
+
+        function updateContentHeader(sectionId) {
+            const titles = {
+                'sensors': {
+                    title: 'Live Sensor Monitoring',
+                    subtitle: 'Real-time data from your agricultural monitoring system'
+                },
+                'camera': {
+                    title: 'Camera System',
+                    subtitle: 'Live video feed from ESP32 camera module'
+                },
+                'ai-insights': {
+                    title: 'AI Insights & Recommendations',
+                    subtitle: 'Intelligent analysis of your agricultural data'
+                },
+                'history': {
+                    title: 'Historical Data',
+                    subtitle: 'Past sensor readings and trend analysis'
+                },
+                'about': {
+                    title: 'About AgriSight & GrowVer',
+                    subtitle: 'System information and technology overview'
+                }
+            };
+            
+            document.getElementById('contentTitle').textContent = titles[sectionId].title;
+            document.getElementById('contentSubtitle').textContent = titles[sectionId].subtitle;
+        }
+
+        // Add click event listeners to navigation links
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const sectionId = this.getAttribute('data-section');
+                switchSection(sectionId);
+                
+                // Close mobile menu if open
+                if (window.innerWidth <= 768) {
+                    document.getElementById('sidebar').classList.remove('mobile-open');
+                }
+            });
+        });
+
+        // Mobile menu toggle
+        function toggleMobileMenu() {
+            document.getElementById('sidebar').classList.toggle('mobile-open');
+        }
+
+        // Redirect to analytics page when sensor card is clicked
+        function redirectToAnalytics(sensorType) {
+            window.location.href = `analytics.php?sensor=${sensorType}`;
+        }
+
+        // Camera functions
+        function updateStatus(status, message) {
+            cameraStatus.className = `camera-status ${status}`;
+            let statusText = status === 'online' ? 'Connected' : 
+                           status === 'offline' ? 'Offline' : 
+                           'Connecting';
+            cameraStatus.textContent = statusText;
+            if (message) {
+                cameraInfo.textContent = message;
+            }
+        }
+
+        function initializeStream() {
+            updateStatus('connecting', 'Connecting to camera...');
+            
+            // Try direct connection first, then proxy
+            const streamSrc = STREAM_URL + '?t=' + Date.now();
+            cameraStream.src = streamSrc;
+            modalStream.src = streamSrc;
+            
+            cameraStream.onload = function() {
+                streamActive = true;
+                reconnectAttempts = 0;
+                cameraOverlay.classList.add('hidden');
+                cameraStream.style.display = 'block';
+                updateStatus('online', `Connected to ${ESP32_IP}`);
+            };
+            
+            cameraStream.onerror = function() {
+                // Try proxy method
+                const proxySrc = PROXY_URL + '&t=' + Date.now();
+                cameraStream.src = proxySrc;
+                modalStream.src = proxySrc;
+                
+                cameraStream.onload = function() {
+                    streamActive = true;
+                    reconnectAttempts = 0;
+                    cameraOverlay.classList.add('hidden');
+                    cameraStream.style.display = 'block';
+                    updateStatus('online', `Connected via proxy to ${ESP32_IP}`);
+                };
+                
+                cameraStream.onerror = function() {
+                    handleConnectionError();
+                };
+            };
+        }
+
+        function handleConnectionError() {
+            streamActive = false;
+            cameraOverlay.classList.remove('hidden');
+            cameraStream.style.display = 'none';
+            
+            if (reconnectAttempts < maxReconnectAttempts) {
+                reconnectAttempts++;
+                updateStatus('connecting', `Reconnecting... (${reconnectAttempts}/${maxReconnectAttempts})`);
+                
+                reconnectTimeout = setTimeout(() => {
+                    initializeStream();
+                }, 3000 * reconnectAttempts);
+            } else {
+                updateStatus('offline', 'Connection failed. Check ESP32 camera.');
+                cameraOverlay.querySelector('.camera-text').textContent = 'Camera Offline';
+            }
+        }
+
+        function openFullscreen() {
+            if (streamActive) {
+                cameraModal.style.display = 'block';
+                document.body.style.overflow = 'hidden';
+            } else {
+                initializeStream();
+            }
+        }
+
+        function closeFullscreen() {
+            cameraModal.style.display = 'none';
+            document.body.style.overflow = 'auto';
+        }
+
+        // Auto-refresh functions
+        function refreshSensorData() {
+            fetch('data.json')
+                .then(response => response.json())
+                .then(data => {
+                    // Update metric cards
+                    const tempCard = document.querySelector('.temperature .metric-value');
+                    const humidityCard = document.querySelector('.humidity .metric-value');
+                    const gasCard = document.querySelector('.gas .metric-value');
+                    const altitudeCard = document.querySelector('.altitude .metric-value');
+                    
+                    if (tempCard) tempCard.textContent = data.temperature + '°C';
+                    if (humidityCard) humidityCard.textContent = data.humidity + '%';
+                    if (gasCard) gasCard.textContent = data.gas_sensor;
+                    if (altitudeCard) altitudeCard.textContent = data.altitude + 'm';
+                })
+                .catch(error => console.log('Error fetching sensor data:', error));
+        }
+
+        function refreshAIInsights() {
+            fetch('json/ai_data.json')
+                .then(response => response.json())
+                .then(data => {
+                    const aiContent = document.getElementById('ai-analysis');
+                    if (aiContent && data[0] && data[0].analysis) {
+                        const analysis = data[0].analysis;
+                        const formatted = analysis.replace(/\b(\d+)\.\s+(Temperature|Humidity|Gas Sensor(?: \(.*?\))?|Altitude):/gi, "<br><strong>$1. $2:</strong>");
+                        aiContent.innerHTML = formatted.replace(/\n/g, '<br>');
+                    }
+                })
+                .catch(error => console.log('Error fetching AI data:', error));
+        }
+
+        function refreshHistoryData() {
+            fetch('json/history.json')
+                .then(response => response.json())
+                .then(data => {
+                    const historyContainer = document.querySelector('#history .history-table');
+                    if (!historyContainer) return;
+                    
+                    if (data && Array.isArray(data) && data.length > 0) {
+                        let tableHTML = `
+                            <h3 class="table-title">Sensor Data History</h3>
+                            <table class="data-table">
+                                <thead>
+                                    <tr>
+                                        <th>Timestamp</th>
+                                        <th>Temperature</th>
+                                        <th>Humidity</th>
+                                        <th>Gas Level</th>
+                                        <th>Altitude</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                        `;
+                        
+                        data.forEach(record => {
+                            const temp = record.temperature || 'N/A';
+                            const humidity = record.humidity || 'N/A';
+                            const gas = record.gas_sensor || 'N/A';
+                            const altitude = record.altitude || 'N/A';
+                            const timestamp = record.timestamp || 'N/A';
+                            
+                            // Determine status
+                            let statusClass = 'status-safe';
+                            let statusText = 'Normal';
+                            
+                            if (gas > 300) {
+                                statusClass = 'status-warning';
+                                statusText = 'Warning';
+                            } else if (temp > 35 || humidity > 80) {
+                                statusClass = 'status-caution';
+                                statusText = 'Caution';
+                            }
+                            
+                            tableHTML += `
+                                <tr>
+                                    <td>${timestamp}</td>
+                                    <td>${temp}${temp !== 'N/A' ? '°C' : ''}</td>
+                                    <td>${humidity}${humidity !== 'N/A' ? '%' : ''}</td>
+                                    <td>${gas}</td>
+                                    <td>${altitude}${altitude !== 'N/A' ? 'm' : ''}</td>
+                                    <td><span class="status-badge ${statusClass}">${statusText}</span></td>
+                                </tr>
+                            `;
+                        });
+                        
+                        tableHTML += '</tbody></table>';
+                        historyContainer.innerHTML = tableHTML;
+                    } else {
+                        historyContainer.innerHTML = `
+                            <h3 class="table-title">Sensor Data History</h3>
+                            <div class="no-data-message">
+                                No historical data available yet. Data will appear here once collection begins.
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => console.log('Error fetching history data:', error));
+        }
+
+        document.querySelectorAll('.metric-card').forEach(card => {
+            card.addEventListener('click', function(e) {
+                const rect = card.getBoundingClientRect();
+                const ripple = document.createElement('div');
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                ripple.style.position = 'absolute';
+                ripple.style.borderRadius = '50%';
+                ripple.style.background = 'rgba(255, 255, 255, 0.3)';
+                ripple.style.transform = 'scale(0)';
+                ripple.style.animation = 'ripple 0.6s linear';
+                ripple.style.left = x + 'px';
+                ripple.style.top = y + 'px';
+                ripple.style.width = '20px';
+                ripple.style.height = '20px';
+                ripple.style.marginLeft = '-10px';
+                ripple.style.marginTop = '-10px';
+                ripple.style.pointerEvents = 'none';
+                
+                card.style.position = 'relative';
+                card.appendChild(ripple);
+                
+                setTimeout(() => {
+                    ripple.remove();
+                }, 600);
+            });
+        });
+
+        // Initialize dashboard
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                initializeStream();
+            }, 1000);
+            
+            // Set up auto-refresh intervals
+            setInterval(refreshSensorData, 30000);    // Every 30 seconds
+            setInterval(refreshAIInsights, 60000);    // Every 60 seconds
+            setInterval(refreshHistoryData, 45000);   // Every 45 seconds
+        });
+
+        // Handle page visibility changes
+        document.addEventListener('visibilitychange', function() {
+            if (document.hidden) {
+                // Page is hidden, optionally pause stream
+            } else {
+                // Page is visible again, resume stream if it was active
+                if (streamActive && !cameraStream.src) {
+                    initializeStream();
+                }
+            }
+        });
+
+        // Prevent modal from closing when clicking on the image
+        if (document.querySelector('.camera-modal-content')) {
+            document.querySelector('.camera-modal-content').addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+        }
+
+        // Close mobile menu when clicking outside
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const toggle = document.querySelector('.mobile-menu-toggle');
+            
+            if (window.innerWidth <= 768 && 
+                !sidebar.contains(e.target) && 
+                !toggle.contains(e.target) && 
+                sidebar.classList.contains('mobile-open')) {
+                sidebar.classList.remove('mobile-open');
+            }
+        });
+
+        // Handle window resize
+        window.addEventListener('resize', function() {
+            if (window.innerWidth > 768) {
+                document.getElementById('sidebar').classList.remove('mobile-open');
+            }
+        });
+    </script>
+</body>
+</html>

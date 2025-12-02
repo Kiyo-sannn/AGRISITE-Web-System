@@ -1,0 +1,90 @@
+"""from google import genai
+
+client = genai.Client(api_key="AIzaSyBzNxikoqCxukLCmab80RZRU5peqKOicmE")
+
+response = client.models.generate_content(a
+    model="gemini-2.0-flash", contents="Explain how AI works in a few words"
+)
+print(response.text)"""
+
+Chatbot Area
+    <!-- AI Chat Popup Modal
+    <div class="ai-chat-modal" id="aiChatModal">
+        <div class="ai-chat-container">
+            <div class="ai-chat-header">
+                <div class="ai-chat-header-info">
+                    <div class="ai-avatar">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M8 14s1.5 2 4 2 4-2 4-2"></path>
+                            <line x1="9" y1="9" x2="9.01" y2="9"></line>
+                            <line x1="15" y1="9" x2="15.01" y2="9"></line>
+                        </svg>
+                    </div>
+                    <div>
+                        <h3 class="ai-chat-title">AgriSITE AI Assistant</h3>
+                        <p class="ai-chat-status">
+                            <span class="status-dot"></span>
+                            Online
+                        </p>
+                    </div>
+                </div>
+                <button class="ai-chat-close" onclick="closeAIChat()" title="Close chat">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+            
+            <div class="ai-chat-messages" id="aiChatMessages">
+                <div class="ai-message">
+                    <div class="message-avatar">AI</div>
+                    <div class="message-content">
+                        <p>Hello! I'm your AgriSITE AI Assistant. I can help you understand your sensor data, provide recommendations, and answer questions about your agricultural system.</p>
+                        <p class="message-suggestions-title">You can ask me about:</p>
+                        <div class="message-suggestions">
+                            <button class="suggestion-chip" onclick="sendSuggestion('What do my current sensor readings mean?')">
+                                Current readings
+                            </button>
+                            <button class="suggestion-chip" onclick="sendSuggestion('What are the optimal conditions for my crops?')">
+                                Optimal conditions
+                            </button>
+                            <button class="suggestion-chip" onclick="sendSuggestion('Any recommendations based on recent data?')">
+                                Recommendations
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ai-chat-input-container">
+                <div class="ai-chat-input-wrapper">
+                    <textarea 
+                        id="aiChatInput" 
+                        class="ai-chat-input" 
+                        placeholder="Type your question here..."
+                        rows="1"
+                        onkeydown="handleChatKeydown(event)"
+                    ></textarea>
+                    <button class="ai-chat-send" onclick="sendMessage()" id="sendButton">
+                        <svg class="send-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <line x1="22" y1="2" x2="11" y2="13"></line>
+                            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+                        </svg>
+                    </button>
+                </div>
+                <p class="ai-chat-disclaimer">AI responses are generated based on your sensor data and general agricultural knowledge.</p>
+            </div>
+        </div>
+    </div> -->
+
+            <!-- Bottom AI Chat Button 
+            <div class="nav-bottom">
+                <button class="ai-chat-button" onclick="openAIChat()" title="Chat with AI Assistant">
+                    <svg class="chat-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                    </svg>
+                    <span class="chat-button-text">Ask AI</span>
+                </button>
+            </div> -->

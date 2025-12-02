@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AGRI-SITE Smart Cost-Benefit Calculator</title>
+  <link rel="icon" href="../assets/images/Logo_1.png">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    .card {
+      transition: 0.25s ease;
+      overflow: visible;
+      position: relative;
+      z-index: 1;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      background-color: rgba(255,255,255,0.08);
+    }
+    select, input {
+      background-color: rgba(255,255,255,0.08) !important;
+      color: white !important;
+    }
+
+    select option {
+      background-color: #1e293b;
+      color: white;
+      padding: 10px;
+    }
+  </style>
+</head>
+  <body class="min-h-screen bg-gradient-to-br from-slate-800 via-blue-900 to-slate-900 text-white p-6">
+
+  <!-- BACK BUTTON -->
+  <div class="max-w-5xl mx-auto mb-4">
+    <button onclick="window.location.href='../pages/agrisite.php'" 
+      class="flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 rounded-lg border border-white/20 transition">
+      <i data-lucide="arrow-left"></i>
+      <span>Back to Dashboard</span>
+    </button>
+  </div>
+
+  <!-- HEADER -->
+  <div class="max-w-5xl mx-auto mb-10 text-center">
+    <h1 class="text-5xl font-bold mb-2 flex items-center justify-center gap-2">
+      <span>AGRI-SITE Calculator</span>
+    </h1>
+    <p class="text-blue-200 text-lg">
+      Smart Agriculture Deployment • Cost-Benefit & ROI Estimator
+    </p>
+  </div>
+
+  <!-- INPUT CARDS GRID -->
+  <div class="max-w-5xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-6">
+
+    <!-- CARD: BASIC PARAMETERS -->
+    <div class="card bg-white/10 p-6 rounded-2xl shadow-md border border-white/10">
+      <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+        <i data-lucide="settings" class="text-blue-400"></i>
+        Basic Parameters
+      </h2>
+
+      <div class="space-y-4">
+
+        <div>
+          <label class="text-sm text-blue-200">Deployment Location</label>
+          <select id="deploymentLocation" class="w-full p-3 rounded-lg border border-white/20">
+            <option value="">Select location</option>
+            <option value="Farm">Farm</option>
+            <option value="Garden">Garden</option>
+            <option value="GreenHouse">GreenHouse</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-sm text-blue-200">Farm Area (sqm)</label>
+          <input id="farmArea" type="number" class="w-full p-3 rounded-lg border border-white/20" placeholder="e.g., 1000" />
+        </div>
+
+        <div>
+          <label class="text-sm text-blue-200">Deployment Type</label>
+          <select id="deploymentType" class="w-full p-3 rounded-lg border border-white/20">
+            <option value="">Choose deployment</option>
+            <option value="Stationary Robot">Stationary Robot</option>
+            <option value="Drone">Drone</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-sm text-blue-200">Number of Cubes</label>
+          <input id="numberOfCubes" type="number" class="w-full p-3 rounded-lg border border-white/20" placeholder="e.g., 5" />
+        </div>
+
+        <div>
+          <label class="text-sm text-blue-200">Projection Period (years)</label>
+          <select id="projectionYears" class="w-full p-3 rounded-lg border border-white/20">
+            <option value="1">1 Year</option>
+            <option value="3" selected>3 Years</option>
+            <option value="5">5 Years</option>
+            <option value="10">10 Years</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- CARD: CROP & YIELD -->
+    <div class="card bg-white/10 p-6 rounded-2xl shadow-md border border-white/10">
+      <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+        <i data-lucide="sprout" class="text-green-400"></i>
+        Crop & Yield
+      </h2>
+
+      <div class="space-y-4">
+        <div>
+          <label class="text-sm text-blue-200">Crop Type</label>
+          <select id="cropType" class="w-full p-3 rounded-lg border border-white/20">
+            <option value="">Select crop type</option>
+            <option value="Rice">Rice</option>
+            <option value="Corn">Corn</option>
+            <option value="Wheat">Wheat</option>
+            <option value="Vegetables">Vegetables</option>
+            <option value="Fruits">Fruits</option>
+            <option value="Sugarcane">Sugarcane</option>
+            <option value="Coffee">Coffee</option>
+            <option value="Cacao">Cacao</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="text-sm text-blue-200">Average Crop Yield (kg/ha)</label>
+          <input id="avgCropYield" type="number" class="w-full p-3 rounded-lg border border-white/20" placeholder="e.g., 4000" />
+        </div>
+
+        <div>
+          <label class="text-sm text-blue-200">Farmgate Price (₱/kg)</label>
+          <input id="farmgatePrice" type="number" class="w-full p-3 rounded-lg border border-white/20" placeholder="e.g., 22" />
+        </div>
+
+        <div>
+          <label class="text-sm text-blue-200">Expected Yield Improvement (%)</label>
+          <input id="expectedYieldImprovement" type="number" class="w-full p-3 rounded-lg border border-white/20" placeholder="e.g., 15" />
+        </div>
+      </div>
+    </div>
+
+    <!-- CARD: SENSORS -->
+    <div class="card bg-white/10 p-6 rounded-2xl shadow-md border border-white/10 md:col-span-2">
+      <h2 class="text-xl font-semibold mb-4 flex items-center gap-2">
+        <i data-lucide="cpu" class="text-yellow-300"></i>
+        Sensor Selection
+      </h2>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+
+        <!-- Sensor Items -->
+        <label class="flex items-center gap-3 bg-white/5 border border-white/20 p-3 rounded-lg cursor-pointer hover:bg-white/10">
+          <input id="dht22" type="checkbox" class="w-5 h-5">
+          <span>DHT22 – ₱250</span>
+        </label>
+
+        <label class="flex items-center gap-3 bg-white/5 border border-white/20 p-3 rounded-lg cursor-pointer hover:bg-white/10">
+          <input id="mq2" type="checkbox" class="w-5 h-5">
+          <span>MQ2 – ₱150</span>
+        </label>
+
+        <label class="flex items-center gap-3 bg-white/5 border border-white/20 p-3 rounded-lg cursor-pointer hover:bg-white/10">
+          <input id="gps" type="checkbox" class="w-5 h-5">
+          <span>GPS – ₱400</span>
+        </label>
+
+        <label class="flex items-center gap-3 bg-white/5 border border-white/20 p-3 rounded-lg cursor-pointer hover:bg-white/10">
+          <input id="esp32cam" type="checkbox" class="w-5 h-5">
+          <span>ESP32-CAM – ₱500</span>
+        </label>
+
+        <label class="flex items-center gap-3 bg-white/5 border border-white/20 p-3 rounded-lg cursor-pointer hover:bg-white/10">
+          <input id="lora" type="checkbox" class="w-5 h-5">
+          <span>LoRa – ₱800</span>
+        </label>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTION BUTTON -->
+  <div class="max-w-5xl mx-auto mt-6">
+    <button id="calculateBtn"
+      class="w-full py-4 bg-green-500 hover:bg-green-600 rounded-xl text-xl font-bold shadow-lg flex items-center justify-center gap-2 transition">
+      <i data-lucide="calculator"></i>
+      Calculate
+    </button>
+  </div>
+
+  <!-- RESULTS SECTION -->
+  <div id="results" class="max-w-5xl mx-auto mt-10 bg-white/10 p-8 rounded-2xl border border-white/10 hidden">
+    <h2 class="text-3xl font-bold text-center mb-6">Results</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+      <div class="bg-white/5 p-4 rounded-xl">
+        <p class="text-sm text-blue-200">Total Investment Costs</p>
+        <p id="totalCosts" class="text-2xl font-bold"></p>
+      </div>
+
+      <div class="bg-white/5 p-4 rounded-xl">
+        <p class="text-sm text-blue-200">Annual Benefits</p>
+        <p id="annualBenefits" class="text-2xl font-bold"></p>
+      </div>
+
+      <div class="bg-white/5 p-4 rounded-xl">
+        <p class="text-sm text-blue-200">Total Benefits <span id="projectionLabel"></span></p>
+        <p id="totalBenefitsOverYears" class="text-2xl font-bold"></p>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 text-center">
+      <div class="bg-white/5 p-4 rounded-xl">
+        <p class="text-sm text-blue-200">Net Benefit <span id="netBenefitLabel"></span></p>
+        <p id="netBenefit" class="text-2xl font-bold"></p>
+      </div>
+      <div class="bg-white/5 p-4 rounded-xl">
+        <p class="text-sm text-blue-200">ROI <span id="roiLabel"></span></p>
+        <p id="roi" class="text-3xl font-bold"></p>
+      </div>
+
+      <div class="bg-white/5 p-4 rounded-xl">
+        <p class="text-sm text-blue-200">Payback Period</p>
+        <p id="payback" class="text-3xl font-bold"></p>
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="mt-10 bg-white/5 p-6 rounded-xl">
+      <h3 class="text-xl font-semibold mb-4 text-center">Financial Overview</h3>
+      <canvas id="resultsChart"></canvas>
+    </div>
+  </div>
+
+<script>
+  lucide.createIcons();
+
+  let chart;
+
+  const sensorCosts = {
+    dht22: 250, 
+    mq2: 150, 
+    gps: 400, 
+    esp32cam: 500, 
+    lora: 800
+  };
+
+  const deploymentCosts = {
+    "Stationary Robot": 10000,
+    "Drone": 20000
+  };
+
+  document.getElementById("calculateBtn").addEventListener("click", () => {
+
+    // Get all input values
+    const farmArea = parseFloat(document.getElementById("farmArea").value) || 0;
+    const cubes = parseFloat(document.getElementById("numberOfCubes").value) || 0;
+    const deploymentType = document.getElementById("deploymentType").value;
+    const avgYield = parseFloat(document.getElementById("avgCropYield").value) || 0;
+    const price = parseFloat(document.getElementById("farmgatePrice").value) || 0;
+    const improvement = parseFloat(document.getElementById("expectedYieldImprovement").value) || 0;
+    const projectionYears = parseInt(document.getElementById("projectionYears").value) || 1;
+
+    // Calculate costs
+    const deploymentCost = deploymentCosts[deploymentType] || 0;
+    const cubeCost = cubes * 2200;
+
+    let sensorCost = 0;
+    Object.keys(sensorCosts).forEach(id => {
+      if (document.getElementById(id).checked) {
+        sensorCost += sensorCosts[id] * cubes;
+      }
+    });
+
+    const totalCosts = deploymentCost + cubeCost + sensorCost;
+
+    // Calculate benefits (CORRECTED)
+    const areaHa = farmArea / 10000; // Convert sqm to hectares
+    const currentYield = avgYield * areaHa; // Current total yield in kg
+    const additionalYield = currentYield * (improvement / 100); // Additional yield from improvement
+    const annualBenefits = additionalYield * price; // Annual revenue increase
+
+    // Calculate financial metrics (CORRECTED WITH PROJECTION)
+    const totalBenefitsOverYears = annualBenefits * projectionYears; // Total benefits over projection period
+    const netBenefit = totalBenefitsOverYears - totalCosts; // Net benefit over projection period
+    const roi = totalCosts > 0 ? (netBenefit / totalCosts) * 100 : 0; // ROI percentage over projection
+    const payback = annualBenefits > 0 ? totalCosts / annualBenefits : Infinity; // Years to recover investment
+
+    // Update labels to show projection period
+    const yearLabel = projectionYears === 1 ? "(1 Year)" : `(${projectionYears} Years)`;
+    document.getElementById("projectionLabel").innerText = yearLabel;
+    document.getElementById("netBenefitLabel").innerText = yearLabel;
+    document.getElementById("roiLabel").innerText = yearLabel;
+
+    // Display results
+    document.getElementById("results").classList.remove("hidden");
+    document.getElementById("totalCosts").innerText = "₱" + totalCosts.toLocaleString(undefined, {maximumFractionDigits: 2});
+    document.getElementById("annualBenefits").innerText = "₱" + annualBenefits.toLocaleString(undefined, {maximumFractionDigits: 2});
+    document.getElementById("totalBenefitsOverYears").innerText = "₱" + totalBenefitsOverYears.toLocaleString(undefined, {maximumFractionDigits: 2});
+    document.getElementById("netBenefit").innerText = "₱" + netBenefit.toLocaleString(undefined, {maximumFractionDigits: 2});
+    document.getElementById("roi").innerText = roi.toFixed(2) + "%";
+    document.getElementById("payback").innerText = payback === Infinity ? "∞" : payback.toFixed(2) + " years";
+
+    // Destroy existing chart if any
+    if (chart) chart.destroy();
+
+    const ctx = document.getElementById("resultsChart");
+
+    // Create horizontal bar chart
+    chart = new Chart(ctx, {
+      type: "bar",
+      data: {
+        labels: ["Investment Costs", "Annual Benefits", "First Year Net"],
+        datasets: [{
+          label: "Amount (₱)",
+          data: [totalCosts, annualBenefits, netBenefit],
+          backgroundColor: ["#ef4444", "#22c55e", "#3b82f6"]
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: true,
+        scales: {
+          y: { 
+            beginAtZero: true,
+            ticks: {
+              color: 'rgba(255,255,255,0.7)',
+              callback: function(value) {
+                return '₱' + value.toLocaleString();
+              }
+            },
+            grid: {
+              color: 'rgba(255,255,255,0.1)'
+            }
+          },
+          x: {
+            ticks: {
+              color: 'rgba(255,255,255,0.9)'
+            },
+            grid: {
+              display: false
+            }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: 'white',
+              font: {
+                size: 14
+              }
+            }
+          },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                return context.dataset.label + ': ₱' + context.parsed.y.toLocaleString();
+              }
+            }
+          }
+        }
+      }
+    });
+
+    // Scroll to results
+    document.getElementById("results").scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+</script>
+
+</body>
+</html>
